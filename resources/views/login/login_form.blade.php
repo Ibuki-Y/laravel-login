@@ -20,11 +20,8 @@
         <li>{{ $error }}</li>
       </ul>
     @endforeach
-    @if (session('login_error'))
-      <div class="alert alert-danger">
-        {{ session('login_error') }}
-      </div>
-    @endif
+    <x-alert type="danger" :session="session('danger')" />
+    <x-alert type="success" :session="session('success')" />
 
     <label for="inputEmail" class="sr-only">Email address</label>
     <input name="email" type="email" id="inputEmail" class="form-control" placeholder="Email address" required

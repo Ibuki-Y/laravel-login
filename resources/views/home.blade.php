@@ -12,16 +12,16 @@
 <body>
   <div class="container">
     <div class="mt-5">
-      @if (session('login_success'))
-        <div class="alert alert-success">
-          {{ session('login_success') }}
-        </div>
-      @endif
+      <x-alert type="success" :session="session('success')" />
       <h3>Profile</h3>
       <ul>
         <li>name: {{ Auth::user()->name }}</li>
         <li>mail: {{ Auth::user()->email }}</li>
       </ul>
+      <form action="{{ route('logout') }}" method="POST">
+        @csrf
+        <button class="btn btn-primary">Logout</button>
+      </form>
     </div>
   </div>
 </body>

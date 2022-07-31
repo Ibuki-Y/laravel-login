@@ -30,11 +30,27 @@ class AuthController extends Controller {
             // セッション再生成
             $request->session()->regenerate();
 
-            return redirect('home')->with('login_success', 'Login succeeded.');
+            return redirect()->route('home')->with('success', 'Login succeeded.');
         }
 
         return back()->withErrors([
-            'login_error' => 'Email address or password is incorrect.'
+            'danger' => 'Email address or password is incorrect.'
         ]);
+    }
+
+    /**
+     * Execute Logout.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function logout(Request $request) {
+        Auth::logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login.show')->with('success', 'Logged out.');
     }
 }
