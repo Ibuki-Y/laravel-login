@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 class AuthController extends Controller {
+    public function __construct(User $user) {
+        $this->user = $user;
+    }
+
     /**
      * View Login Page.
      *
@@ -27,10 +31,11 @@ class AuthController extends Controller {
     public function login(LoginFormRequest $request) {
         $credentials = $request->only('email', 'password');
 
-        $user = User::where('email', '=', $credentials['email'])->first();
+        // $userModel = new User();
+        $user = $this->user->getUserByEmail($credentials['email']);
 
         if (!is_null($user)) {
-            if ($user->locked_flg === 1) {
+            if ($this->user->isAccountLocked($user)) {
                 return back()->withErrors([
                     'danger' => 'Your account has been locked.'
                 ]);
@@ -40,18 +45,14 @@ class AuthController extends Controller {
                 // セッション再生成
                 $request->session()->regenerate();
 
-                if ($user->error_count > 0) {
-                    $user->error_count = 0;
-                    $user->save();
-                }
+                $this->user->resetErrorCount($user);
 
                 return redirect()->route('home')->with('success', 'Login succeeded.');
             }
 
-            $user->error_count += 1;
-            if ($user->error_count > 5) {
-                $user->locked_flg = 1;
-                $user->save();
+            $user->error_count = $this->user->addErrorCount($user->error_count);
+
+            if ($this->user->lockAccount($user)) {
                 return back()->withErrors([
                     'danger' => 'Sorry, your account is locked.'
                 ]);
