@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\LoginFormRequest;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class AuthController extends Controller {
     /**
@@ -26,11 +27,36 @@ class AuthController extends Controller {
     public function login(LoginFormRequest $request) {
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
-            // セッション再生成
-            $request->session()->regenerate();
+        $user = User::where('email', '=', $credentials['email'])->first();
 
-            return redirect()->route('home')->with('success', 'Login succeeded.');
+        if (!is_null($user)) {
+            if ($user->locked_flg === 1) {
+                return back()->withErrors([
+                    'danger' => 'Your account has been locked.'
+                ]);
+            }
+
+            if (Auth::attempt($credentials)) {
+                // セッション再生成
+                $request->session()->regenerate();
+
+                if ($user->error_count > 0) {
+                    $user->error_count = 0;
+                    $user->save();
+                }
+
+                return redirect()->route('home')->with('success', 'Login succeeded.');
+            }
+
+            $user->error_count += 1;
+            if ($user->error_count > 5) {
+                $user->locked_flg = 1;
+                $user->save();
+                return back()->withErrors([
+                    'danger' => 'Sorry, your account is locked.'
+                ]);
+            }
+            $user->save();
         }
 
         return back()->withErrors([
